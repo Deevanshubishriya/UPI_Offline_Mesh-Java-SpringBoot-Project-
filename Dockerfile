@@ -1,11 +1,22 @@
-# Build stage
-FROM maven:3.8.5-openjdk-17 AS build
+# Stage 1: Build the application
+FROM eclipse-temurin:25-jdk AS build
+WORKDIR /app
+
+# Install Maven
+RUN apt-get update && apt-get install -y maven
+
+# Copy your source code and build the JAR
 COPY . .
 RUN mvn clean package -DskipTests
 
-# Package stage
-FROM openjdk:17-slim
-COPY --from=build target/*.jar app.jar
+# Stage 2: Run the application
+FROM eclipse-temurin:25-jdk
+WORKDIR /app
+
+# Copy the built JAR from the previous stage
+COPY --from=build /app/target/*.jar app.jar
+
+# Expose the port and run the app
 ENV PORT=8080
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
